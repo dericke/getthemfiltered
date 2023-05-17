@@ -40,10 +40,14 @@ class GetThemFilteredDialog(QtWidgets.QDockWidget, FORM_CLASS):
         self.setupUi(self)
         self.iface = iface
 
+        QgsVectorLayer.editingStarted.connect(self.disable_on_edit)
+        QgsVectorLayer.editingStopped.connect(self.disable_on_edit)
+
         self.rdo_single.toggled.connect(self.single_or_multi)
         # self.rdo_multi.toggled.connect(self.single_or_multi)
 
         self.cob_layer.layerChanged.connect(self.add_fields_to_cboxes)
+        self.cob_layer.layerChanged.connect(self.disable_on_edit)
 
         self.cob_field.fieldChanged.connect(self.changed_field)
 
@@ -146,3 +150,16 @@ class GetThemFilteredDialog(QtWidgets.QDockWidget, FORM_CLASS):
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
+
+    def disable_on_edit(self):
+        candidate_widgets = [
+            self.chb_go,
+            self.chb_zoom,
+            self.list_values,
+            self.rdo_multi,
+            self.rdo_single,
+        ]
+        edit_mode = self.layer.isEditable()
+        for widget in candidate_widgets:
+            widget.setEnabled(not edit_mode)
+        self.edit_warning.setVisible(edit_mode)
